@@ -46,12 +46,18 @@ def goal_vector(N, target_min=None):
 
 def get_values(G, G_prime):
     N = len(G.nodes())
+    print('Finding sortest paths...')
     SPG = dict(all_pairs_shortest_path_length(G))
     SPG_prime = dict(all_pairs_shortest_path_length(G_prime))
+    print('Found sortest paths.')
 
+    print('Generating LP...')
     (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1)
+    print('Generated LP.')
     c = goal_vector(N)
+    print('Solving LP...')
     G_with_G_prime = linprog(c, A_ub=AGGP, b_ub=bGGP, method="interior-point", options={"disp":False, "maxiter":N*N*N*N*100})
+    print('Solved LP...')
     return G_with_G_prime.x
 
 def permute_labels_only(G):
@@ -119,7 +125,7 @@ for i in range(1,2):
         #sequence = [2, 2, 2, 2, 6, 4, 4, 4, 4]  # Set sequence
         #G=nx.configuration_model(sequence)
 
-        G=nx.erdos_renyi_graph(14,0.4)
+        G=nx.erdos_renyi_graph(12,0.2)
         #G=nx.watts_strogatz_graph(10,3,0.3)
         #G=nx.barabasi_albert_graph(10,2)
 
