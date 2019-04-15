@@ -6,6 +6,7 @@ from networkx.algorithms import isomorphism
 from networkx.algorithms.shortest_paths.unweighted import all_pairs_shortest_path_length
 from networkx.algorithms.components import is_connected
 import numpy as np
+import time
 
 def lp_without_maxs_or_goal(N, SPG, SPG_prime, travel_min):
     A = []
@@ -46,18 +47,18 @@ def goal_vector(N, target_min=None):
 
 def get_values(G, G_prime):
     N = len(G.nodes())
-    print('Finding sortest paths...')
+    #print('Finding sortest paths...')
     SPG = dict(all_pairs_shortest_path_length(G))
     SPG_prime = dict(all_pairs_shortest_path_length(G_prime))
-    print('Found sortest paths.')
+    #print('Found sortest paths.')
 
-    print('Generating LP...')
+    #print('Generating LP...')
     (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1)
-    print('Generated LP.')
+    #print('Generated LP.')
     c = goal_vector(N)
-    print('Solving LP...')
+    #print('Solving LP...')
     G_with_G_prime = linprog(c, A_ub=AGGP, b_ub=bGGP, method="interior-point", options={"disp":False, "maxiter":N*N*N*N*100})
-    print('Solved LP...')
+    #print('Solved LP...')
     return G_with_G_prime.x
 
 def permute_labels_only(G):
@@ -107,7 +108,8 @@ def make_graph_with_same_degree_dist(G):
             #print("Edges after:")
             #print(G_prime.edges())
             if not is_connected(G_prime):
-                print("Bad: G_prime disconnected")
+                # print("Bad: G_prime disconnected")
+                pass
             tries -= 1
         if not is_connected(G_prime):
             pass
@@ -116,7 +118,7 @@ def make_graph_with_same_degree_dist(G):
             done = True
     return G_prime
 
-for i in range(1,2):
+for size in range(11,17):
     #print("Creating Pairs of Graphs")
     good = False
     while not good:
@@ -125,21 +127,26 @@ for i in range(1,2):
         #sequence = [2, 2, 2, 2, 6, 4, 4, 4, 4]  # Set sequence
         #G=nx.configuration_model(sequence)
 
-        G=nx.erdos_renyi_graph(12,0.2)
+        G=nx.erdos_renyi_graph(size,0.2)
         #G=nx.watts_strogatz_graph(10,3,0.3)
         #G=nx.barabasi_albert_graph(10,2)
 
         G=nx.Graph(G)
         G.remove_edges_from(G.selfloop_edges())
         if not is_connected(G):
-            print("Bad: G disconnected")
+            # print("Bad: G disconnected")
             continue
         good = True
         G_prime = make_graph_with_same_degree_dist(G)
         # G_prime = permute_labels_only(G)
 
+    start_time = time.time()
     numbers = get_values(G, G_prime)
-    print(numbers)
+    end_time = time.time()
+    # print(numbers)
+    print(size)
+    print('Time to get this result')
+    print(end_time - start_time)
 
     # Get actual result
     GM = isomorphism.GraphMatcher(G, G_prime)
