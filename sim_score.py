@@ -8,14 +8,14 @@ from networkx.algorithms.components import is_connected
 import numpy as np
 import time
 
-def lp_without_maxs_or_goal(N, SPG, SPG_prime, travel_min):
+def lp_without_maxs_or_goal(N, SPG, SPG_prime, travel_min, travel_max):
     A = []
     b = []
     for i in range(0, N):
         for j in range(i + 1, N):
             for k in range(0, N):
                 for l in range(k + 1, N):
-                    if SPG[i][j] >= travel_min and SPG_prime[k][l] >= travel_min:
+                    if SPG[i][j] >= travel_min and SPG_prime[k][l] >= travel_min and SPG[i][j] <= travel_max and SPG_prime[k][l] <= travel_max:
                         new_constraint = [0 for n in range(0, N * N)]  # w_ik and w_jl
                         new_constraint[N * i + k] = -1
                         new_constraint[N * j + l] = -1
@@ -53,7 +53,8 @@ def get_values(G, G_prime):
     #print('Found sortest paths.')
 
     #print('Generating LP...')
-    (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1)
+    (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1, N - 1)
+
     #print('Generated LP.')
     c = goal_vector(N)
     #print('Solving LP...')
@@ -118,7 +119,7 @@ def make_graph_with_same_degree_dist(G):
             done = True
     return G_prime
 
-for size in range(11,17):
+for size in range(16,32):
     #print("Creating Pairs of Graphs")
     good = False
     while not good:
@@ -127,7 +128,7 @@ for size in range(11,17):
         #sequence = [2, 2, 2, 2, 6, 4, 4, 4, 4]  # Set sequence
         #G=nx.configuration_model(sequence)
 
-        G=nx.erdos_renyi_graph(size,0.2)
+        G=nx.erdos_renyi_graph(size,0.4)
         #G=nx.watts_strogatz_graph(10,3,0.3)
         #G=nx.barabasi_albert_graph(10,2)
 
@@ -144,9 +145,7 @@ for size in range(11,17):
     numbers = get_values(G, G_prime)
     end_time = time.time()
     # print(numbers)
-    print(size)
-    print('Time to get this result')
-    print(end_time - start_time)
+    print("%s, %s" % (size, end_time - start_time))
 
     # Get actual result
     GM = isomorphism.GraphMatcher(G, G_prime)
