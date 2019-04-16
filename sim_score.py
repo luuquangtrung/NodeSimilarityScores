@@ -28,6 +28,26 @@ def lp_without_maxs_or_goal(N, SPG, SPG_prime, travel_min, travel_max):
                         b.append(-abs(SPG[i][j] - SPG_prime[k][l]))
     return (A, b)
 
+def alternate_lp_without_maxs_or_goal(N, SPG, SPG_prime):
+    A = []
+    b = []
+    for i in range(0, N):
+        for j in range(i, N):
+            for k in range(0, N):
+                for l in range(k, N):
+                    if SPG[i][j] == 1 or SPG_prime[k][l] == 1:
+                        new_constraint = [0 for n in range(0, N * N)]  # w_ik and w_jl
+                        new_constraint[N * i + k] = -1
+                        new_constraint[N * j + l] = -1
+                        A.append(new_constraint)
+                        b.append(-abs(SPG[i][j] - SPG_prime[k][l]))
+                        new_constraint = [0 for n in range(0, N * N)]  # w_il and w_jk
+                        new_constraint[N * i + l] = -1
+                        new_constraint[N * j + k] = -1
+                        A.append(new_constraint)
+                        b.append(-abs(SPG[i][j] - SPG_prime[k][l]))
+    return (A, b)
+
 def maxs_matrix(N):
     A = []
     for i in range(0, N):
@@ -53,7 +73,8 @@ def get_values(G, G_prime):
     #print('Found sortest paths.')
 
     #print('Generating LP...')
-    (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1, N - 1)
+    (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1, 5)
+    # (AGGP, bGGP) = alternate_lp_without_maxs_or_goal(N, SPG, SPG_prime)
 
     #print('Generated LP.')
     c = goal_vector(N)
@@ -119,8 +140,9 @@ def make_graph_with_same_degree_dist(G):
             done = True
     return G_prime
 
-for size in range(16,32):
+for size in [1000]:
     #print("Creating Pairs of Graphs")
+    start_time = time.time()
     good = False
     while not good:
         # Generate first G
@@ -128,7 +150,7 @@ for size in range(16,32):
         #sequence = [2, 2, 2, 2, 6, 4, 4, 4, 4]  # Set sequence
         #G=nx.configuration_model(sequence)
 
-        G=nx.erdos_renyi_graph(size,0.4)
+        G=nx.erdos_renyi_graph(size, 0.01)
         #G=nx.watts_strogatz_graph(10,3,0.3)
         #G=nx.barabasi_albert_graph(10,2)
 
@@ -138,14 +160,29 @@ for size in range(16,32):
             # print("Bad: G disconnected")
             continue
         good = True
-        G_prime = make_graph_with_same_degree_dist(G)
-        # G_prime = permute_labels_only(G)
+        # G_prime = make_graph_with_same_degree_dist(G)
+        G_prime = permute_labels_only(G)
 
+    print("Graph of size %s created in %s seconds." % (size, time.time() - start_time))
     start_time = time.time()
     numbers = get_values(G, G_prime)
     end_time = time.time()
-    # print(numbers)
+    """
+    for i in range(0,size):
+        max_cost = numbers[i*size]
+        min_cost = max_cost
+        for j in range(i*size + 1,(i+1)*size):
+            if numbers[j] < min_cost:
+                min_cost = numbers[j]
+            elif numbers[j] > max_cost:
+                max_cost = numbers[j]
+        if max_cost - min_cost > 0.25:
+            print("Yes")
+        else:
+            print("No")
+    """
     print("%s, %s" % (size, end_time - start_time))
+    print(numbers)
 
     # Get actual result
     GM = isomorphism.GraphMatcher(G, G_prime)
