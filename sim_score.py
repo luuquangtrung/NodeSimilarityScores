@@ -6,6 +6,7 @@ from networkx.algorithms import isomorphism
 from networkx.algorithms.shortest_paths.unweighted import all_pairs_shortest_path_length
 from networkx.algorithms.components import is_connected
 import numpy as np
+import sys
 import time
 
 def lp_without_maxs_or_goal(N, SPG, SPG_prime, travel_min, travel_max):
@@ -167,22 +168,23 @@ for size in [1000]:
     start_time = time.time()
     numbers = get_values(G, G_prime)
     end_time = time.time()
-    """
+    print("%s, %s" % (size, end_time - start_time))
     for i in range(0,size):
         max_cost = numbers[i*size]
         min_cost = max_cost
-        for j in range(i*size + 1,(i+1)*size):
-            if numbers[j] < min_cost:
-                min_cost = numbers[j]
-            elif numbers[j] > max_cost:
-                max_cost = numbers[j]
+        for j in range(i*size, (i+1)*size):
+            num = numbers[j]
+            if num < min_cost:
+                min_cost = num
+            elif num > max_cost:
+                max_cost = num
+            sys.stdout.write("%.2f, " % (num))
+        sys.stdout.flush()
         if max_cost - min_cost > 0.25:
-            print("Yes")
+            print(1)
         else:
-            print("No")
-    """
-    print("%s, %s" % (size, end_time - start_time))
-    print(numbers)
+            print(0)
+    # print(numbers)
 
     # Get actual result
     GM = isomorphism.GraphMatcher(G, G_prime)
