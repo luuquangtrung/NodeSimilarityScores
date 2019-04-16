@@ -12,11 +12,16 @@ import time
 def lp_without_maxs_or_goal(N, SPG, SPG_prime, travel_min, travel_max):
     A = []
     b = []
+    start_time = time.time()
     for i in range(0, N):
+        print("Starting round %s. %.2f seconds elapsed." % (i, time.time() - start_time))
+        sys.stdout.flush()
         for j in range(i + 1, N):
+            if SPG[i][j] < travel_min or SPG[i][j] > travel_max:
+                continue
             for k in range(0, N):
                 for l in range(k + 1, N):
-                    if SPG[i][j] >= travel_min and SPG_prime[k][l] >= travel_min and SPG[i][j] <= travel_max and SPG_prime[k][l] <= travel_max:
+                    if SPG_prime[k][l] >= travel_min and SPG[i][j] > SPG_prime[k][l]:
                         new_constraint = [0 for n in range(0, N * N)]  # w_ik and w_jl
                         new_constraint[N * i + k] = -1
                         new_constraint[N * j + l] = -1
@@ -68,20 +73,33 @@ def goal_vector(N, target_min=None):
 
 def get_values(G, G_prime):
     N = len(G.nodes())
-    #print('Finding sortest paths...')
+    print('Finding sortest paths...')
+    sys.stdout.flush()
     SPG = dict(all_pairs_shortest_path_length(G))
     SPG_prime = dict(all_pairs_shortest_path_length(G_prime))
-    #print('Found sortest paths.')
+    print('Found sortest paths.')
+    sys.stdout.flush()
 
-    #print('Generating LP...')
-    (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1, 5)
+    print('Generating LP...')
+    sys.stdout.flush()
+    diameter = 0
+    for i in range(0,N):
+        for j in range(i+1,N):
+            if SPG[i][j] > diameter:
+                diameter = SPG[i][j]
+    (AGGP, bGGP) = lp_without_maxs_or_goal(N, SPG, SPG_prime, 1, size - 1)
+    print("Length is %s" % (len(bGGP)))
+    sys.stdout.flush()
     # (AGGP, bGGP) = alternate_lp_without_maxs_or_goal(N, SPG, SPG_prime)
 
-    #print('Generated LP.')
+    print('Generated LP.')
+    sys.stdout.flush()
     c = goal_vector(N)
-    #print('Solving LP...')
+    print('Solving LP...')
+    sys.stdout.flush()
     G_with_G_prime = linprog(c, A_ub=AGGP, b_ub=bGGP, method="interior-point", options={"disp":False, "maxiter":N*N*N*N*100})
-    #print('Solved LP...')
+    print('Solved LP...')
+    sys.stdout.flush()
     return G_with_G_prime.x
 
 def permute_labels_only(G):
@@ -141,7 +159,7 @@ def make_graph_with_same_degree_dist(G):
             done = True
     return G_prime
 
-for size in [1000]:
+for size in [200]:
     #print("Creating Pairs of Graphs")
     start_time = time.time()
     good = False
@@ -151,7 +169,7 @@ for size in [1000]:
         #sequence = [2, 2, 2, 2, 6, 4, 4, 4, 4]  # Set sequence
         #G=nx.configuration_model(sequence)
 
-        G=nx.erdos_renyi_graph(size, 0.01)
+        G=nx.erdos_renyi_graph(size, 0.02)
         #G=nx.watts_strogatz_graph(10,3,0.3)
         #G=nx.barabasi_albert_graph(10,2)
 
